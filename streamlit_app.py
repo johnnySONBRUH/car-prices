@@ -3,15 +3,10 @@ import joblib
 import pandas as pd
 import numpy as np
 
-# Load the model and the label encoder
+# Load the model and the label encoders
 data_dict = joblib.load('predictor.pkl')
 model = data_dict['model']
-le = data_dict['enc']
-
-# Note: The training method used in main.py is problematic (reusing the same label encoder).
-# To make this app work, we have to assume the 'enc' object in predictor.pkl 
-# somehow holds all the necessary mappings. In a real scenario, this should be fixed
-# by training with separate encoders for each categorical column.
+encoders = data_dict['encoders']
 
 def predict_price(name, year, km_driven, fuel, seller_type, transmission, owner, seats, max_power, mileage_unit, mileage, engine):
     # Create a DataFrame for the input
@@ -30,15 +25,10 @@ def predict_price(name, year, km_driven, fuel, seller_type, transmission, owner,
         'Engine (CC)': [engine]
     })
     
-    # Transform categorical features
-    # This will likely fail or produce wrong results due to the training method
+    # Transform categorical features using the specific encoder for each column
     try:
-        input_data['name'] = le.transform(input_data['name'])
-        input_data['fuel'] = le.transform(input_data['fuel'])
-        input_data['seller_type'] = le.transform(input_data['seller_type'])
-        input_data['transmission'] = le.transform(input_data['transmission'])
-        input_data['owner'] = le.transform(input_data['owner'])
-        input_data['Mileage Unit'] = le.transform(input_data['Mileage Unit'])
+        for col, le in encoders.items():
+            input_data[col] = le.transform(input_data[col])
     except Exception as e:
         return f"Error transforming data: {e}"
 
